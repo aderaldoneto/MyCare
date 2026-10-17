@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { isAuthenticated } from '../services/auth'
 
 Vue.use(VueRouter)
 
@@ -10,18 +10,43 @@ const router = new VueRouter({
   routes: [
     {
       path: '/',
+      name: 'login',
+      component: () => import('../views/LoginView.vue')
+    },
+    {
+      path: '/home',
       name: 'home',
-      component: HomeView
+      component: () => import('../views/HomeView.vue')
+    },
+    {
+      path: '/patients',
+      name: 'patients',
+      component: () => import('../views/PatientsView.vue')
     },
     {
       path: '/about',
       name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue')
+    },
+    {
+      path: '*',
+      redirect: '/'
     }
   ]
+})
+
+router.beforeEach((to, _from, next) => {
+  if (to.name !== 'login' && !isAuthenticated()) {
+    next({ name: 'login' })
+    return
+  }
+
+  if (to.name === 'login' && isAuthenticated()) {
+    next({ name: 'home' })
+    return
+  }
+
+  next()
 })
 
 export default router
