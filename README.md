@@ -1,18 +1,18 @@
-## MyCare
+# MyCare
 
-### Pré-requisitos
+## Pré-requisitos
 
 - Docker e Docker Compose
 - Git
 
-### 1. Clonar o repositório
+## 1. Clonar o repositório
 
 ```bash
 git clone https://github.com/aderaldoneto/MyCare.git
 cd MyCare
 ```
 
-### 2. Configurar o backend Laravel
+## 2. Configurar o backend Laravel
 
 Instale as dependências do PHP utilizando Docker:
 
@@ -31,67 +31,74 @@ docker run --rm \
   '
 ```
 
-Configure as variáveis de ambiente e inicie os containers:
+Configure as variáveis de ambiente:
 
 ```bash
 cd php-laravel
 cp .env.example .env
+```
+
+Volte para a raiz do repositório:
+
+```bash
+cd ..
+```
+
+## 3. Configurar a aplicação
+
+Gere a chave da aplicação Laravel:
+
+```bash
+cd php-laravel
+docker compose run --rm laravel.test php artisan key:generate
+cd ..
+```
+
+## 4. Iniciar os serviços
+
+Na raiz do repositório, execute:
+
+```bash
 docker compose up -d --build
 ```
 
-Gere a chave da aplicação e execute as migrations do banco de dados:
+Esse comando inicia o backend Laravel, o banco de dados MySQL e o frontend Vue.js.
+
+Na primeira inicialização, o container do frontend instala automaticamente suas dependências com `npm ci`.
+
+Execute as migrations do banco de dados:
 
 ```bash
-docker compose exec laravel.test php artisan key:generate
-docker compose exec laravel.test php artisan migrate
+docker compose exec backend php artisan migrate
 ```
 
-### 3. Configurar o frontend Vue.js
-
-Abra um novo terminal na raiz do repositório e instale as dependências do frontend:
+Acompanhe o estado dos serviços:
 
 ```bash
-docker run --rm \
-  --user "$(id -u):$(id -g)" \
-  -e npm_config_cache=/tmp/.npm \
-  -v "$PWD/front-vuejs:/app" \
-  -w /app \
-  node:18-alpine \
-  npm ci
+docker compose ps
 ```
 
-Inicie o servidor de desenvolvimento:
-
-```bash
-docker run --rm -it \
-  --user "$(id -u):$(id -g)" \
-  -e npm_config_cache=/tmp/.npm \
-  -p 5174:5173 \
-  -v "$PWD/front-vuejs:/app" \
-  -w /app \
-  node:18-alpine \
-  npm run dev -- --host 0.0.0.0
-```
-
-### 4. Acessar a aplicação
+## 5. Acessar a aplicação
 
 - **Frontend (Vue.js):** http://localhost:5174/
 - **Backend (Laravel):** http://localhost:8000/
 
-Mantenha os containers do Docker e o servidor de desenvolvimento do frontend em execução enquanto utilizar a aplicação.
+Mantenha os serviços em execução enquanto utilizar a aplicação.
 
-### 5. Encerrar a aplicação
+## 6. Encerrar a aplicação
 
-No diretório `php-laravel`, execute:
+Na raiz do repositório, execute:
 
 ```bash
 docker compose down
 ```
 
-Para encerrar os containers e também excluir o volume do banco de dados, apagando os dados armazenados nele, execute:
+Esse comando encerra os containers, mas preserva os dados armazenados no volume do banco de dados.
+
+Para encerrar os containers e também excluir os volumes, execute:
 
 ```bash
 docker compose down -v
 ```
 
-**Atenção:** o último comando remove permanentemente os dados do banco armazenados nesse volume.
+**Atenção:** esse último comando remove permanentemente os dados armazenados nos volumes do projeto, incluindo os dados do banco de dados MySQL.
