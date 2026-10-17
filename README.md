@@ -1,37 +1,97 @@
-# Desafio para a vaga de Fullstack Developer (PHP/Laravel e VueJS)
+## MyCare
 
+### Pré-requisitos
 
-## Instruções
-- O desafio consiste em criar uma pequena aplicação fullstack com o Backend em PHP/Laravel e o Front-end (client) em VueJS.
-- A aplicação precisará entregar uma aplicação com o CRUD completo para o cadastro de pacientes.
-- A ideia é avaliar habilidades como técnica e lógica de programação, estilo de código e padronização do trabalho.
+- Docker e Docker Compose
+- Git
 
-### Entrega Esperada
-- README com instruções de como rodar as duas aplicações juntas
-- Tela inicial com listagem de pacientes
-- Tela de detalhe do paciente com infos sobre o paciente
-- Tela de edição de paciente
-- Modal de confirmação de exclusão de um paciente
--  Ao excluir, o sistema deverá realizar um "soft delete" do registro na base
-- Utilizar boas práticas de programação e código limpo
+### 1. Clonar o repositório
 
-## Informações Úteis
-- O candidato deverá clonar o repositório de back-end e do front-end, rodar as duas aplicações localmente e criar o trabalho proposto no desafio.
+```bash
+git clone https://github.com/aderaldoneto/MyCare.git
+cd MyCare
+```
 
-### Back-end (php-laravel)
-- No docker-compose do projeto já tem instância de MySQL e a aplicação conteinerizada
-- Utilizar API Rest para expor as rotas para o front-end
-- Anexar um arquivo do Postman com exemplos das chamadas
-- Entrega com testes de unidade ou E2E serão usadas como critério de desempate.
+### 2. Configurar o backend Laravel
 
-### Front-end (front-vuejs)
-- Utilizamos VueJS 2 criados a partir do "Getting Start" da documentação
-- Criar rota e layout utilizando Vue-Material, Vue-Bootstrap ou Vuetify (ou outra lib de sua escolha)
-- Criar uma página para listar os pacientes
-- Botões e interações na listagem para entrar no detalhe do paciente, editar ou excluir um paciente
-- Tela de Detalhes do paciente
+Instale as dependências do PHP utilizando Docker:
 
-### Tela / Protótipo
-Todas as telas estão na pasta images
+```bash
+docker run --rm \
+  -v "$PWD/php-laravel:/app" \
+  -w /app \
+  php:8.2-cli \
+  bash -lc '
+    apt-get update -qq &&
+    apt-get install -y -qq git unzip curl libcurl4-openssl-dev libzip-dev libonig-dev libxml2-dev >/dev/null &&
+    docker-php-ext-install -j$(nproc) pdo_mysql mbstring xml curl zip &&
+    curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php &&
+    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer &&
+    composer install
+  '
+```
 
-![Listagem de Pacientes](images/1.png)
+Configure as variáveis de ambiente e inicie os containers:
+
+```bash
+cd php-laravel
+cp .env.example .env
+docker compose up -d --build
+```
+
+Gere a chave da aplicação e execute as migrations do banco de dados:
+
+```bash
+docker compose exec laravel.test php artisan key:generate
+docker compose exec laravel.test php artisan migrate
+```
+
+### 3. Configurar o frontend Vue.js
+
+Abra um novo terminal na raiz do repositório e instale as dependências do frontend:
+
+```bash
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  -e npm_config_cache=/tmp/.npm \
+  -v "$PWD/front-vuejs:/app" \
+  -w /app \
+  node:18-alpine \
+  npm ci
+```
+
+Inicie o servidor de desenvolvimento:
+
+```bash
+docker run --rm -it \
+  --user "$(id -u):$(id -g)" \
+  -e npm_config_cache=/tmp/.npm \
+  -p 5174:5173 \
+  -v "$PWD/front-vuejs:/app" \
+  -w /app \
+  node:18-alpine \
+  npm run dev -- --host 0.0.0.0
+```
+
+### 4. Acessar a aplicação
+
+- **Frontend (Vue.js):** http://localhost:5174/
+- **Backend (Laravel):** http://localhost:8000/
+
+Mantenha os containers do Docker e o servidor de desenvolvimento do frontend em execução enquanto utilizar a aplicação.
+
+### 5. Encerrar a aplicação
+
+No diretório `php-laravel`, execute:
+
+```bash
+docker compose down
+```
+
+Para encerrar os containers e também excluir o volume do banco de dados, apagando os dados armazenados nele, execute:
+
+```bash
+docker compose down -v
+```
+
+**Atenção:** o último comando remove permanentemente os dados do banco armazenados nesse volume.
