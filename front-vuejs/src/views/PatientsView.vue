@@ -106,6 +106,7 @@ onMounted(() => {
                   <th scope="col">CPF</th>
                   <th scope="col">Celular</th>
                   <th scope="col">Data de nascimento</th>
+                  <th scope="col"></th>
                 </tr>
               </thead>
               <tbody>
@@ -114,6 +115,14 @@ onMounted(() => {
                   <td>{{ patient.cpf }}</td>
                   <td>{{ patient.phone || '—' }}</td>
                   <td>{{ formatBirthDate(patient.birth_date) }}</td>
+                  <td>
+                    <router-link :to="`/patients/${patient.id}`" aria-label="Ver detalhes do paciente">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye preview-icon">
+                        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </router-link>
+                  </td>
                 </tr>
                 <tr v-if="isLoading">
                   <td class="patient-table-message" colspan="4">Carregando pacientes...</td>

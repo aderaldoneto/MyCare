@@ -17,8 +17,11 @@ class PatientController extends Controller
             'birth_date' => ['nullable', 'date'],
             'sex' => ['nullable', 'in:m,f'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:patients,email'],
             'description' => ['nullable', 'string'],
+        ], [
+            'cpf.unique' => 'Já existe um paciente cadastrado com este CPF.',
+            'email.unique' => 'Já existe um paciente cadastrado com este e-mail.',
         ]);
 
         $patient = Patient::create($validated);

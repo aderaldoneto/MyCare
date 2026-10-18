@@ -74,11 +74,56 @@ function handlePhoneInput(event: Event): void {
   patient.phone = (event.target as HTMLInputElement).value
 }
 
+function handleRgInput(event: Event): void {
+  handleMaskedInput(event, 20, (digits) => digits)
+  patient.rg = (event.target as HTMLInputElement).value
+}
+
+function today(): string {
+  const date = new Date()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
 async function handleSubmit(): Promise<void> {
   const form = document.querySelector<HTMLFormElement>('.patient-form-card')
-  if (form && !form.checkValidity()) {
-    form.querySelector<HTMLElement>(':invalid')?.focus()
-    errorMessage.value = 'Preencha os campos obrigatórios para salvar!'
+  const cpfDigits = patient.cpf.replace(/\D/g, '')
+  const rgDigits = patient.rg.replace(/\D/g, '')
+  const phoneDigits = patient.phone.replace(/\D/g, '')
+  const emailIsValid = !patient.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patient.email)
+  let validationError = ''
+  let invalidField = ''
+
+  if (patient.name.trim().length < 5) {
+    validationError = 'O nome deve ter no mínimo 5 caracteres.'
+    invalidField = 'name'
+  } else if (cpfDigits.length !== 11) {
+    validationError = 'O CPF deve conter 11 números.'
+    invalidField = 'cpf'
+  } else if (rgDigits.length < 7 || rgDigits.length !== patient.rg.length) {
+    validationError = 'O RG deve conter ao menos 7 números.'
+    invalidField = 'rg'
+  } else if (!patient.birth_date) {
+    validationError = 'Preencha a data de nascimento.'
+    invalidField = 'birth_date'
+  } else if (patient.birth_date > today()) {
+    validationError = 'A data de nascimento não pode ser futura.'
+    invalidField = 'birth_date'
+  } else if (!patient.sex) {
+    validationError = 'Selecione o sexo.'
+    invalidField = 'sex'
+  } else if (phoneDigits.length !== 11) {
+    validationError = 'O celular deve conter 11 números.'
+    invalidField = 'phone'
+  } else if (!emailIsValid) {
+    validationError = 'Digite um e-mail válido!'
+    invalidField = 'email'
+  }
+
+  if (validationError) {
+    form?.querySelector<HTMLElement>(`[data-field="${invalidField}"]`)?.focus()
+    errorMessage.value = validationError
     return
   }
 
@@ -117,7 +162,7 @@ async function handleSubmit(): Promise<void> {
           <div class="patient-form-grid">
             <label class="patient-form-field patient-form-field-two-thirds">
               <span>Nome completo <strong>*</strong></span>
-              <input v-model.trim="patient.name" type="text" maxlength="255" required />
+              <input v-model.trim="patient.name" data-field="name" type="text" maxlength="255" required />
             </label>
 
             <label class="patient-form-field">
@@ -125,6 +170,7 @@ async function handleSubmit(): Promise<void> {
               <input
                 :value="patient.cpf"
                 @input="handleCpfInput"
+                data-field="cpf"
                 type="text"
                 maxlength="14"
                 autocomplete="off"
@@ -136,27 +182,32 @@ async function handleSubmit(): Promise<void> {
 
             <label class="patient-form-field">
               <span>RG <strong>*</strong></span>
-              <input 
-                v-model.trim="patient.rg" 
-                type="text" 
-                maxlength="20" 
-                placeholder="00.000.000-0"
+                <input
+                :value="patient.rg"
+                @input="handleRgInput"
+                data-field="rg"
+                type="text"
+                maxlength="20"
+                inputmode="numeric"
+                placeholder="Somente números"
                 required
               />
             </label>
 
             <label class="patient-form-field">
               <span>Data de nascimento <strong>*</strong></span>
-              <input 
-                v-model="patient.birth_date" 
-                type="date" 
+              <input
+                v-model="patient.birth_date"
+                data-field="birth_date"
+                type="date"
+                :max="today()"
                 required
               />
             </label>
 
             <label class="patient-form-field">
               <span>Sexo <strong>*</strong></span>
-              <select v-model="patient.sex" required>
+              <select v-model="patient.sex" data-field="sex" required>
                 <option value="">Selecionar</option>
                 <option value="f">Feminino</option>
                 <option value="m">Masculino</option>
@@ -168,6 +219,7 @@ async function handleSubmit(): Promise<void> {
               <input
                 :value="patient.phone"
                 @input="handlePhoneInput"
+                data-field="phone"
                 type="tel"
                 maxlength="16"
                 inputmode="numeric"
@@ -179,7 +231,7 @@ async function handleSubmit(): Promise<void> {
 
             <label class="patient-form-field patient-form-field-two-fifths">
               <span>E-mail (Opcional)</span>
-              <input v-model.trim="patient.email" type="email" maxlength="255" placeholder="Descrever" />
+              <input v-model.trim="patient.email" data-field="email" type="email" maxlength="255" placeholder="Descrever" />
             </label>
 
             <label class="patient-form-field patient-form-field-wide">
