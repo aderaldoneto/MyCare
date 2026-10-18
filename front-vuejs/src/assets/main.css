@@ -623,6 +623,10 @@
   gap: 20px;
 }
 
+.user-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .patient-form-field {
   display: flex;
   min-width: 0;

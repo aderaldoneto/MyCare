@@ -154,7 +154,7 @@ export async function createPatient(patient: NewPatient): Promise<void> {
 
   if (response.status === 422) {
     const data: unknown = await response.json()
-    throw new Error(getValidationMessage(data) || 'Confira os dados informados.')
+    throw new Error(getApiErrorMessage(data) || 'Confira os dados informados.')
   }
 
   if (!response.ok) {
@@ -235,7 +235,7 @@ export async function updatePatient(id: string, patient: NewPatient): Promise<vo
 
   if (response.status === 422) {
     const data: unknown = await response.json()
-    throw new Error(getValidationMessage(data) || 'Confira os dados informados.')
+    throw new Error(getApiErrorMessage(data) || 'Confira os dados informados.')
   }
 
   if (!response.ok) {
@@ -335,6 +335,15 @@ function getValidationMessage(value: unknown): string | null {
   }
 
   return null
+}
+
+function getApiErrorMessage(value: unknown): string | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const message = (value as { message?: unknown }).message
+  return typeof message === 'string' ? message : getValidationMessage(value)
 }
 
 function isPatientPage(value: unknown): value is PatientPage {

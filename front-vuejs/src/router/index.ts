@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import { isAuthenticated } from '../services/auth'
+import { isAdmin, isAuthenticated } from '../services/auth'
 
 Vue.use(VueRouter)
 
@@ -34,6 +34,24 @@ const router = new VueRouter({
       component: () => import('../views/PatientCreateView.vue')
     },
     {
+      path: '/users',
+      name: 'users',
+      component: () => import('../views/UsersView.vue'),
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/users/create',
+      name: 'user-create',
+      component: () => import('../views/UserFormView.vue'),
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/users/:id',
+      name: 'user-edit',
+      component: () => import('../views/UserFormView.vue'),
+      meta: { requiresAdmin: true }
+    },
+    {
       path: '/about',
       name: 'about',
       component: () => import('../views/AboutView.vue')
@@ -48,6 +66,11 @@ const router = new VueRouter({
 router.beforeEach((to, _from, next) => {
   if (to.name !== 'login' && !isAuthenticated()) {
     next({ name: 'login' })
+    return
+  }
+
+  if (to.matched.some((record) => record.meta.requiresAdmin) && !isAdmin()) {
+    next({ name: 'home' })
     return
   }
 
