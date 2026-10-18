@@ -116,7 +116,6 @@ async function handleLogout(): Promise<void> {
       <div class="profile">
         <span class="profile-avatar">{{ userInitials }}</span>
         <span><strong>{{ user?.name }}</strong><small>{{ userRole }}</small></span>
-        <span class="profile-menu" aria-hidden="true">···</span>
       </div>
     </div>
   </aside>
