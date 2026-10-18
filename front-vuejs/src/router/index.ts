@@ -24,6 +24,11 @@ const router = new VueRouter({
       component: () => import('../views/PatientsView.vue')
     },
     {
+      path: '/patients/create',
+      name: 'patient-create',
+      component: () => import('../views/PatientCreateView.vue')
+    },
+    {
       path: '/about',
       name: 'about',
       component: () => import('../views/AboutView.vue')

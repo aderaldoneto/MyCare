@@ -8,6 +8,24 @@ use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'cpf' => ['required', 'string', 'max:14', 'unique:patients,cpf'],
+            'rg' => ['nullable', 'string', 'max:20'],
+            'birth_date' => ['nullable', 'date'],
+            'sex' => ['nullable', 'in:m,f'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $patient = Patient::create($validated);
+
+        return response()->json($patient, 201);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([

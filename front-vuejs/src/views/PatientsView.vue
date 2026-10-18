@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import MenuView from '@/components/MenuView.vue'
 import TopoView from '@/components/TopoView.vue'
+import AlertToast from '@/components/AlertToast.vue'
 import { fetchPatients, type Patient } from '@/services/patients'
 
 const patients = ref<Patient[]>([])
@@ -12,6 +13,7 @@ const lastPage = ref(1)
 const total = ref(0)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const successMessage = ref(typeof window !== 'undefined' ? String(window.location.search ? new URLSearchParams(window.location.search).get('success') || '' : '') : '')
 
 async function loadPatients(): Promise<void> {
   isLoading.value = true
@@ -66,6 +68,7 @@ onMounted(() => {
 
     <main class="dashboard-main">
       <TopoView current-page="Pacientes" />
+      <AlertToast v-if="successMessage" type="success" :message="successMessage" @close="successMessage = ''" />
 
       <div class="patients-page">
         <div class="patients-page-heading">
@@ -73,6 +76,9 @@ onMounted(() => {
             <h1>Pacientes</h1>
             <p>Consulte e encontre seus pacientes.</p>
           </div>
+          <router-link class="primary-button" to="/patients/create">
+            <span aria-hidden="true">+</span> Cadastrar paciente
+          </router-link>
         </div>
 
         <section class="patient-table-card" aria-label="Lista de pacientes">

@@ -24,6 +24,17 @@ export interface PatientPage {
   total: number
 }
 
+export interface NewPatient {
+  name: string
+  cpf: string
+  rg: string
+  birth_date: string
+  sex: 'm' | 'f' | ''
+  phone: string
+  email: string
+  description: string
+}
+
 export async function fetchPatientCount(): Promise<number> {
   const token = getAccessToken()
 
@@ -107,6 +118,51 @@ export async function fetchPatients(search: string, page: number): Promise<Patie
   return data
 }
 
+export async function createPatient(patient: NewPatient): Promise<void> {
+  const token = getAccessToken()
+
+  if (!token) {
+    throw new Error('Sua sessão expirou. Entre novamente.')
+  }
+
+  let response: Response
+
+  try {
+    response = await fetch(`${API_BASE_URL}/patients`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...patient,
+        rg: patient.rg || null,
+        birth_date: patient.birth_date || null,
+        sex: patient.sex || null,
+        phone: patient.phone || null,
+        email: patient.email || null,
+        description: patient.description || null
+      })
+    })
+  } catch {
+    throw new Error('Não foi possível conectar ao servidor. Tente novamente.')
+  }
+
+  if (response.status === 401) {
+    throw new Error('Sua sessão expirou. Entre novamente.')
+  }
+
+  if (response.status === 422) {
+    const data: unknown = await response.json()
+    throw new Error(getValidationMessage(data) || 'Confira os dados informados.')
+  }
+
+  if (!response.ok) {
+    throw new Error('Não foi possível cadastrar o paciente. Tente novamente.')
+  }
+}
+
 function isPatientCountResponse(value: unknown): value is PatientCountResponse {
   if (!value || typeof value !== 'object') {
     return false
@@ -114,6 +170,26 @@ function isPatientCountResponse(value: unknown): value is PatientCountResponse {
 
   const count = (value as { count?: unknown }).count
   return typeof count === 'number' && Number.isInteger(count) && count >= 0
+}
+
+function getValidationMessage(value: unknown): string | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const errors = (value as { errors?: Record<string, unknown> }).errors
+  if (!errors || typeof errors !== 'object') {
+    return null
+  }
+
+  for (const key of Object.keys(errors)) {
+    const messages = errors[key]
+    if (Array.isArray(messages) && typeof messages[0] === 'string') {
+      return messages[0]
+    }
+  }
+
+  return null
 }
 
 function isPatientPage(value: unknown): value is PatientPage {
