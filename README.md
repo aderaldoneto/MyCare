@@ -69,7 +69,7 @@ Na primeira inicialização, o container do frontend instala automaticamente sua
 Execute as migrations do banco de dados:
 
 ```bash
-docker compose exec backend php artisan migrate
+docker compose exec laravel.test php artisan migrate
 ```
 
 Acompanhe o estado dos serviços:

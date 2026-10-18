@@ -8,15 +8,25 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const isSubmitting = ref(false)
 
-function handleLogin(): void {
-  if (!email.value.trim() || !password.value) {
-    errorMessage.value = 'Informe seu e-mail e sua senha para continuar.'
+async function handleLogin(): Promise<void> {
+  if (isSubmitting.value) {
     return
   }
 
-  signIn()
-  router.push({ name: 'home' })
+  errorMessage.value = ''
+  isSubmitting.value = true
+
+  try {
+    await signIn(email.value.trim(), password.value)
+    await router.push({ name: 'home' })
+  } catch (error) {
+    errorMessage.value =
+      error instanceof Error ? error.message : 'Não foi possível entrar. Tente novamente.'
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -109,7 +119,9 @@ function handleLogin(): void {
           </div>
 
           <p v-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
-          <button class="primary-button login-button" type="submit">Entrar</button>
+          <button class="primary-button login-button" type="submit" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Entrando...' : 'Entrar' }}
+          </button>
         </form>
 
       </div>

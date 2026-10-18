@@ -27,6 +27,11 @@ See [Vite Configuration Reference](https://vitejs.dev/config/).
 npm install
 ```
 
+### API URL
+
+The login uses the Laravel API at `http://localhost:8000/api` by default. Set
+`VITE_API_BASE_URL` in the frontend environment to override this URL.
+
 ### Compile and Hot-Reload for Development
 
 ```sh

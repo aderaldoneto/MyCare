@@ -1,12 +1,26 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router/composables'
 import { signOut } from '@/services/auth'
 
 const router = useRouter()
+const logoutError = ref('')
 
-function handleLogout(): void {
-  signOut()
-  router.push({ name: 'login' })
+async function handleLogout(): Promise<void> {
+  logoutError.value = ''
+
+  try {
+    await signOut()
+  } catch (error) {
+    logoutError.value =
+      error instanceof Error ? error.message : 'Não foi possível encerrar a sessão no servidor.'
+  }
+
+  await router.push({ name: 'login' })
+
+  if (logoutError.value) {
+    window.alert(logoutError.value)
+  }
 }
 </script>
 
@@ -64,6 +78,7 @@ function handleLogout(): void {
         </svg>
         Sair
       </button>
+      <p v-if="logoutError" class="form-error" role="alert">{{ logoutError }}</p>
 
       <div class="profile">
         <span class="profile-avatar">AN</span>
