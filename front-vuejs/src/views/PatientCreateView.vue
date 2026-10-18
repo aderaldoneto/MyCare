@@ -6,6 +6,7 @@ import TopoView from '@/components/TopoView.vue'
 import AlertToast from '@/components/AlertToast.vue'
 import {
   createPatient,
+  deletePatient,
   fetchPatient,
   updatePatient,
   type NewPatient
@@ -19,6 +20,8 @@ const isSubmitting = ref(false)
 const isLoading = ref(false)
 const isLoaded = ref(false)
 const errorMessage = ref('')
+const isDeleteDialogOpen = ref(false)
+const isDeleting = ref(false)
 const patient = reactive<NewPatient>({
   name: '',
   cpf: '',
@@ -201,6 +204,25 @@ async function handleSubmit(): Promise<void> {
   }
 }
 
+async function confirmDelete(): Promise<void> {
+  isDeleting.value = true
+  errorMessage.value = ''
+
+  try {
+    await deletePatient(patientId.value)
+    await router.push({
+      name: 'patients',
+      query: { success: 'Paciente excluído com sucesso!' }
+    })
+  } catch (error) {
+    isDeleteDialogOpen.value = false
+    errorMessage.value =
+      error instanceof Error ? error.message : 'Não foi possível excluir o paciente.'
+  } finally {
+    isDeleting.value = false
+  }
+}
+
 onMounted(() => {
   void loadPatient()
 })
@@ -215,20 +237,16 @@ watch(patientId, () => {
     <MenuView />
 
     <main class="dashboard-main">
-      <TopoView :current-page="isEditing ? 'Editar paciente' : 'Cadastrar paciente'" />
+      <TopoView
+        :current-page="isEditing ? 'Editar' : 'Cadastrar'"
+        :patient-name="isEditing && isLoaded ? patient.name : undefined"
+      />
       <AlertToast v-if="errorMessage" :message="errorMessage" @close="errorMessage = ''" />
 
       <div class="patients-page">
         <div class="patients-page-heading">
           <div>
             <h1>{{ isEditing ? 'Editar paciente' : 'Cadastrar paciente' }}</h1>
-            <p>
-              {{
-                isEditing
-                  ? 'Atualize os dados do paciente.'
-                  : 'Preencha os dados para adicionar um paciente.'
-              }}
-            </p>
           </div>
         </div>
 
@@ -320,7 +338,15 @@ watch(patientId, () => {
           </div>
 
           <div class="patient-form-actions">
-            <router-link class="patient-cancel-button" to="/patients">Cancelar</router-link>
+            <button
+              v-if="isEditing"
+              class="patient-delete-button"
+              type="button"
+              @click="isDeleteDialogOpen = true"
+            >
+              Excluir paciente
+            </button>
+            <router-link v-else class="patient-cancel-button" to="/patients">Cancelar</router-link>
             <button class="primary-button" type="submit" :disabled="isSubmitting">
               {{
                 isSubmitting
@@ -334,6 +360,50 @@ watch(patientId, () => {
             </button>
           </div>
         </form>
+      </div>
+
+      <div v-if="isDeleteDialogOpen" class="delete-dialog-backdrop" @click.self="isDeleteDialogOpen = false">
+        <section
+          class="delete-dialog"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-description"
+        >
+          <header class="delete-dialog-header">
+            <h2 id="delete-dialog-title">Excluir paciente</h2>
+            <button
+              type="button"
+              aria-label="Fechar confirmação"
+              :disabled="isDeleting"
+              @click="isDeleteDialogOpen = false"
+            >
+              ×
+            </button>
+          </header>
+          <p id="delete-dialog-description">
+            Atenção! Ao excluir este paciente, <strong>essa ação não poderá ser desfeita.</strong>
+            Deseja realmente continuar?
+          </p>
+          <footer class="delete-dialog-actions">
+            <button
+              type="button"
+              class="patient-delete-cancel"
+              :disabled="isDeleting"
+              @click="isDeleteDialogOpen = false"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="primary-button"
+              :disabled="isDeleting"
+              @click="confirmDelete"
+            >
+              {{ isDeleting ? 'Excluindo...' : 'Confirmar' }}
+            </button>
+          </footer>
+        </section>
       </div>
     </main>
   </div>

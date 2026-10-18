@@ -95,6 +95,13 @@ class PatientController extends Controller
         return response()->json($this->patientData($patient->refresh()));
     }
 
+    public function destroy(Patient $patient): JsonResponse
+    {
+        $patient->delete();
+
+        return response()->json(['message' => 'Paciente excluído com sucesso.']);
+    }
+
     public function count(): JsonResponse
     {
         return response()->json([

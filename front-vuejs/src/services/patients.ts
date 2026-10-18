@@ -243,6 +243,40 @@ export async function updatePatient(id: string, patient: NewPatient): Promise<vo
   }
 }
 
+export async function deletePatient(id: string): Promise<void> {
+  const token = getAccessToken()
+
+  if (!token) {
+    throw new Error('Sua sessão expirou. Entre novamente.')
+  }
+
+  let response: Response
+
+  try {
+    response = await fetch(`${API_BASE_URL}/patients/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    })
+  } catch {
+    throw new Error('Não foi possível conectar ao servidor. Tente novamente.')
+  }
+
+  if (response.status === 401) {
+    throw new Error('Sua sessão expirou. Entre novamente.')
+  }
+
+  if (response.status === 404) {
+    throw new Error('Paciente não encontrado.')
+  }
+
+  if (!response.ok) {
+    throw new Error('Não foi possível excluir o paciente. Tente novamente.')
+  }
+}
+
 function patientPayload(patient: NewPatient): Record<string, string | null> {
   return {
     ...patient,

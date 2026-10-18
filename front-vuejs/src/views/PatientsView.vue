@@ -74,7 +74,6 @@ onMounted(() => {
         <div class="patients-page-heading">
           <div>
             <h1>Pacientes</h1>
-            <p>Consulte e encontre seus pacientes.</p>
           </div>
           <router-link class="primary-button" to="/patients/create">
             <span aria-hidden="true">+</span> Cadastrar paciente
