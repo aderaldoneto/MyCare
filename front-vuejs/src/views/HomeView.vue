@@ -38,7 +38,7 @@ onMounted(async () => {
             <h1>Olá, {{ user?.name.split(' ')[0] }}</h1>
             <p>Aqui está um resumo para você.</p>
           </div>
-          <a class="primary-button new-patient-button" href="#pacientes">
+          <a class="primary-button new-patient-button" href="/patients">
             <span aria-hidden="true">+</span> Novo paciente
           </a>
         </section>
