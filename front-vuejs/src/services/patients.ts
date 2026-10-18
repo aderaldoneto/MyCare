@@ -17,6 +17,13 @@ export interface Patient {
   birth_date: string | null
 }
 
+export interface PatientDetails extends Patient {
+  rg: string | null
+  sex: 'm' | 'f' | null
+  email: string | null
+  description: string | null
+}
+
 export interface PatientPage {
   data: Patient[]
   current_page: number
@@ -135,15 +142,7 @@ export async function createPatient(patient: NewPatient): Promise<void> {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        ...patient,
-        rg: patient.rg || null,
-        birth_date: patient.birth_date || null,
-        sex: patient.sex || null,
-        phone: patient.phone || null,
-        email: patient.email || null,
-        description: patient.description || null
-      })
+      body: JSON.stringify(patientPayload(patient))
     })
   } catch {
     throw new Error('Não foi possível conectar ao servidor. Tente novamente.')
@@ -163,6 +162,99 @@ export async function createPatient(patient: NewPatient): Promise<void> {
   }
 }
 
+export async function fetchPatient(id: string): Promise<PatientDetails> {
+  const token = getAccessToken()
+
+  if (!token) {
+    throw new Error('Sua sessão expirou. Entre novamente.')
+  }
+
+  let response: Response
+
+  try {
+    response = await fetch(`${API_BASE_URL}/patients/${encodeURIComponent(id)}`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    })
+  } catch {
+    throw new Error('Não foi possível carregar os dados do paciente.')
+  }
+
+  if (response.status === 401) {
+    throw new Error('Sua sessão expirou. Entre novamente.')
+  }
+
+  if (response.status === 404) {
+    throw new Error('Paciente não encontrado.')
+  }
+
+  if (!response.ok) {
+    throw new Error('Não foi possível carregar os dados do paciente.')
+  }
+
+  const data: unknown = await response.json()
+  if (!isPatientDetails(data)) {
+    throw new Error('O servidor retornou dados de paciente inválidos.')
+  }
+
+  return data
+}
+
+export async function updatePatient(id: string, patient: NewPatient): Promise<void> {
+  const token = getAccessToken()
+
+  if (!token) {
+    throw new Error('Sua sessão expirou. Entre novamente.')
+  }
+
+  let response: Response
+
+  try {
+    response = await fetch(`${API_BASE_URL}/patients/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(patientPayload(patient))
+    })
+  } catch {
+    throw new Error('Não foi possível conectar ao servidor. Tente novamente.')
+  }
+
+  if (response.status === 401) {
+    throw new Error('Sua sessão expirou. Entre novamente.')
+  }
+
+  if (response.status === 404) {
+    throw new Error('Paciente não encontrado.')
+  }
+
+  if (response.status === 422) {
+    const data: unknown = await response.json()
+    throw new Error(getValidationMessage(data) || 'Confira os dados informados.')
+  }
+
+  if (!response.ok) {
+    throw new Error('Não foi possível atualizar o paciente. Tente novamente.')
+  }
+}
+
+function patientPayload(patient: NewPatient): Record<string, string | null> {
+  return {
+    ...patient,
+    rg: patient.rg || null,
+    birth_date: patient.birth_date || null,
+    sex: patient.sex || null,
+    phone: patient.phone || null,
+    email: patient.email || null,
+    description: patient.description || null
+  }
+}
+
 function isPatientCountResponse(value: unknown): value is PatientCountResponse {
   if (!value || typeof value !== 'object') {
     return false
@@ -170,6 +262,25 @@ function isPatientCountResponse(value: unknown): value is PatientCountResponse {
 
   const count = (value as { count?: unknown }).count
   return typeof count === 'number' && Number.isInteger(count) && count >= 0
+}
+
+function isPatientDetails(value: unknown): value is PatientDetails {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const patient = value as Partial<PatientDetails>
+  return (
+    typeof patient.id === 'number' &&
+    typeof patient.name === 'string' &&
+    typeof patient.cpf === 'string' &&
+    (typeof patient.rg === 'string' || patient.rg === null) &&
+    (typeof patient.birth_date === 'string' || patient.birth_date === null) &&
+    (patient.sex === 'm' || patient.sex === 'f' || patient.sex === null) &&
+    (typeof patient.phone === 'string' || patient.phone === null) &&
+    (typeof patient.email === 'string' || patient.email === null) &&
+    (typeof patient.description === 'string' || patient.description === null)
+  )
 }
 
 function getValidationMessage(value: unknown): string | null {

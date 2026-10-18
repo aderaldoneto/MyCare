@@ -1,13 +1,23 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router/composables'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router/composables'
 import MenuView from '@/components/MenuView.vue'
 import TopoView from '@/components/TopoView.vue'
 import AlertToast from '@/components/AlertToast.vue'
-import { createPatient, type NewPatient } from '@/services/patients'
+import {
+  createPatient,
+  fetchPatient,
+  updatePatient,
+  type NewPatient
+} from '@/services/patients'
 
+const route = useRoute()
 const router = useRouter()
+const patientId = computed(() => route.params.id || '')
+const isEditing = computed(() => Boolean(patientId.value))
 const isSubmitting = ref(false)
+const isLoading = ref(false)
+const isLoaded = ref(false)
 const errorMessage = ref('')
 const patient = reactive<NewPatient>({
   name: '',
@@ -19,6 +29,30 @@ const patient = reactive<NewPatient>({
   email: '',
   description: ''
 })
+
+function formatCpf(digits: string): string {
+  return digits
+    .slice(0, 11)
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2')
+}
+
+function formatPhone(digits: string): string {
+  const value = digits.slice(0, 11)
+  if (value.length <= 2) {
+    return value
+  }
+
+  let formatted = `(${value.slice(0, 2)}) ${value[2]}`
+  if (value.length > 3) {
+    formatted += ` ${value.slice(3, 7)}`
+  }
+  if (value.length > 7) {
+    formatted += `-${value.slice(7, 11)}`
+  }
+  return formatted
+}
 
 function handleMaskedInput(
   event: Event,
@@ -47,30 +81,12 @@ function handleMaskedInput(
 }
 
 function handleCpfInput(event: Event): void {
-  handleMaskedInput(event, 11, (digits) =>
-    digits
-      .replace(/^(\d{3})(\d)/, '$1.$2')
-      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-      .replace(/\.(\d{3})(\d)/, '.$1-$2')
-  )
+  handleMaskedInput(event, 11, formatCpf)
   patient.cpf = (event.target as HTMLInputElement).value
 }
 
 function handlePhoneInput(event: Event): void {
-  handleMaskedInput(event, 11, (digits) => {
-    if (digits.length <= 2) {
-      return digits
-    }
-
-    let formatted = `(${digits.slice(0, 2)}) ${digits[2]}`
-    if (digits.length > 3) {
-      formatted += ` ${digits.slice(3, 7)}`
-    }
-    if (digits.length > 7) {
-      formatted += `-${digits.slice(7, 11)}`
-    }
-    return formatted
-  })
+  handleMaskedInput(event, 11, formatPhone)
   patient.phone = (event.target as HTMLInputElement).value
 }
 
@@ -81,9 +97,40 @@ function handleRgInput(event: Event): void {
 
 function today(): string {
   const date = new Date()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
+  const month = `0${date.getMonth() + 1}`.slice(-2)
+  const day = `0${date.getDate()}`.slice(-2)
   return `${date.getFullYear()}-${month}-${day}`
+}
+
+async function loadPatient(): Promise<void> {
+  if (!isEditing.value) {
+    isLoaded.value = true
+    return
+  }
+
+  isLoading.value = true
+  errorMessage.value = ''
+  isLoaded.value = false
+
+  try {
+    const savedPatient = await fetchPatient(patientId.value)
+    patient.name = savedPatient.name
+    patient.cpf = formatCpf(savedPatient.cpf.replace(/\D/g, ''))
+    patient.rg = savedPatient.rg || ''
+    patient.birth_date = savedPatient.birth_date || ''
+    patient.sex = savedPatient.sex || ''
+    patient.phone = savedPatient.phone
+      ? formatPhone(savedPatient.phone.replace(/\D/g, ''))
+      : ''
+    patient.email = savedPatient.email || ''
+    patient.description = savedPatient.description || ''
+    isLoaded.value = true
+  } catch (error) {
+    errorMessage.value =
+      error instanceof Error ? error.message : 'Não foi possível carregar os dados do paciente.'
+  } finally {
+    isLoading.value = false
+  }
 }
 
 async function handleSubmit(): Promise<void> {
@@ -101,7 +148,7 @@ async function handleSubmit(): Promise<void> {
   } else if (cpfDigits.length !== 11) {
     validationError = 'O CPF deve conter 11 números.'
     invalidField = 'cpf'
-  } else if (rgDigits.length < 7 || rgDigits.length !== patient.rg.length) {
+  } else if (rgDigits.length < 7) {
     validationError = 'O RG deve conter ao menos 7 números.'
     invalidField = 'rg'
   } else if (!patient.birth_date) {
@@ -131,15 +178,36 @@ async function handleSubmit(): Promise<void> {
   errorMessage.value = ''
 
   try {
-    await createPatient(patient)
-    await router.push({ name: 'patients', query: { success: 'Paciente cadastrado com sucesso!' } })
+    if (isEditing.value) {
+      await updatePatient(patientId.value, patient)
+    } else {
+      await createPatient(patient)
+    }
+    await router.push({
+      name: 'patients',
+      query: {
+        success: isEditing.value
+          ? 'Paciente atualizado com sucesso!'
+          : 'Paciente cadastrado com sucesso!'
+      }
+    })
   } catch (error) {
     errorMessage.value =
-      error instanceof Error ? error.message : 'Não foi possível cadastrar o paciente.'
+      error instanceof Error
+        ? error.message
+        : `Não foi possível ${isEditing.value ? 'atualizar' : 'cadastrar'} o paciente.`
   } finally {
     isSubmitting.value = false
   }
 }
+
+onMounted(() => {
+  void loadPatient()
+})
+
+watch(patientId, () => {
+  void loadPatient()
+})
 </script>
 
 <template>
@@ -147,18 +215,29 @@ async function handleSubmit(): Promise<void> {
     <MenuView />
 
     <main class="dashboard-main">
-      <TopoView current-page="Cadastrar paciente" />
+      <TopoView :current-page="isEditing ? 'Editar paciente' : 'Cadastrar paciente'" />
       <AlertToast v-if="errorMessage" :message="errorMessage" @close="errorMessage = ''" />
 
       <div class="patients-page">
         <div class="patients-page-heading">
           <div>
-            <h1>Cadastrar paciente</h1>
-            <p>Preencha os dados para adicionar um paciente.</p>
+            <h1>{{ isEditing ? 'Editar paciente' : 'Cadastrar paciente' }}</h1>
+            <p>
+              {{
+                isEditing
+                  ? 'Atualize os dados do paciente.'
+                  : 'Preencha os dados para adicionar um paciente.'
+              }}
+            </p>
           </div>
         </div>
 
-        <form class="patient-form-card" novalidate @submit.prevent="handleSubmit">
+        <p v-if="isLoading" role="status">Carregando dados do paciente...</p>
+        <router-link v-else-if="isEditing && !isLoaded" class="patient-cancel-button" to="/patients">
+          Voltar para pacientes
+        </router-link>
+
+        <form v-if="isLoaded" class="patient-form-card" novalidate @submit.prevent="handleSubmit">
           <div class="patient-form-grid">
             <label class="patient-form-field patient-form-field-two-thirds">
               <span>Nome completo <strong>*</strong></span>
@@ -243,7 +322,15 @@ async function handleSubmit(): Promise<void> {
           <div class="patient-form-actions">
             <router-link class="patient-cancel-button" to="/patients">Cancelar</router-link>
             <button class="primary-button" type="submit" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Cadastrando...' : 'Cadastrar paciente' }}
+              {{
+                isSubmitting
+                  ? isEditing
+                    ? 'Salvando...'
+                    : 'Cadastrando...'
+                  : isEditing
+                    ? 'Salvar alterações'
+                    : 'Cadastrar paciente'
+              }}
             </button>
           </div>
         </form>

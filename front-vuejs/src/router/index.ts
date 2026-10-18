@@ -29,6 +29,11 @@ const router = new VueRouter({
       component: () => import('../views/PatientCreateView.vue')
     },
     {
+      path: '/patients/:id',
+      name: 'patient-edit',
+      component: () => import('../views/PatientCreateView.vue')
+    },
+    {
       path: '/about',
       name: 'about',
       component: () => import('../views/AboutView.vue')

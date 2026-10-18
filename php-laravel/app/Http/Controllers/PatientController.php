@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Patient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PatientController extends Controller
 {
@@ -63,10 +64,56 @@ class PatientController extends Controller
         ]);
     }
 
+    public function show(Patient $patient): JsonResponse
+    {
+        return response()->json($this->patientData($patient));
+    }
+
+    public function update(Request $request, Patient $patient): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'cpf' => ['required', 'string', 'max:14', Rule::unique('patients', 'cpf')->ignore($patient->id)],
+            'rg' => ['required', 'string', 'max:20'],
+            'birth_date' => ['required', 'date', 'before_or_equal:today'],
+            'sex' => ['required', 'in:m,f'],
+            'phone' => ['required', 'string', 'max:20'],
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('patients', 'email')->ignore($patient->id),
+            ],
+            'description' => ['nullable', 'string'],
+        ], [
+            'cpf.unique' => 'Já existe um paciente cadastrado com este CPF.',
+            'email.unique' => 'Já existe um paciente cadastrado com este e-mail.',
+        ]);
+
+        $patient->update($validated);
+
+        return response()->json($this->patientData($patient->refresh()));
+    }
+
     public function count(): JsonResponse
     {
         return response()->json([
             'count' => Patient::query()->count(),
         ]);
+    }
+
+    private function patientData(Patient $patient): array
+    {
+        return [
+            'id' => $patient->id,
+            'name' => $patient->name,
+            'cpf' => $patient->cpf,
+            'rg' => $patient->rg,
+            'birth_date' => $patient->birth_date?->toDateString(),
+            'sex' => $patient->sex,
+            'phone' => $patient->phone,
+            'email' => $patient->email,
+            'description' => $patient->description,
+        ];
     }
 }
