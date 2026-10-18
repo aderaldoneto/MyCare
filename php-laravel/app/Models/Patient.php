@@ -16,6 +16,12 @@ class Patient extends Model
         'birth_date',
         'phone',
         'email',
+        'rg',
+        'sex',
+        'description',
     ];
 
+    protected $casts = [
+        'birth_date' => 'date',
+    ];
 }
