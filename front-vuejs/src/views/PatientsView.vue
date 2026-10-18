@@ -110,7 +110,11 @@ onMounted(() => {
               </thead>
               <tbody>
                 <tr v-for="patient in patients" :key="patient.id">
-                  <td>{{ patient.name }}</td>
+                  <td>
+                    <router-link :to="`/patients/${patient.id}`" aria-label="Ver detalhes">
+                      {{ patient.name }}
+                    </router-link>
+                  </td>
                   <td>{{ patient.cpf }}</td>
                   <td>{{ patient.phone || '—' }}</td>
                   <td>{{ formatBirthDate(patient.birth_date) }}</td>
