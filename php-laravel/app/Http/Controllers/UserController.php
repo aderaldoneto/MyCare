@@ -12,8 +12,6 @@ class UserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -39,10 +37,8 @@ class UserController extends Controller
         ]);
     }
 
-    public function count(Request $request): JsonResponse
+    public function count(): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         return response()->json([
             'count' => User::query()->count(),
         ]);
@@ -50,8 +46,6 @@ class UserController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:5', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -67,17 +61,13 @@ class UserController extends Controller
         return response()->json($this->userData($user), 201);
     }
 
-    public function show(Request $request, User $user): JsonResponse
+    public function show(User $user): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         return response()->json($this->userData($user));
     }
 
     public function update(Request $request, User $user): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:5', 'max:255'],
             'email' => [
@@ -114,8 +104,6 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user): JsonResponse
     {
-        $this->authorizeAdmin($request);
-
         if ($request->user()->is($user)) {
             return response()->json([
                 'message' => 'Não é possível excluir o usuário conectado.',
@@ -134,11 +122,6 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'Usuário excluído com sucesso.']);
-    }
-
-    private function authorizeAdmin(Request $request): void
-    {
-        abort_unless($request->user()->role === Role::Admin, 403);
     }
 
     private function userData(User $user): array

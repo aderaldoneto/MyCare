@@ -47,10 +47,6 @@ export function getAuthenticatedUser(): Pick<AuthUser, 'name' | 'role'> | null {
   return name && role ? { name, role } : null
 }
 
-export function isAdmin(): boolean {
-  return getAuthenticatedUser()?.role === 'admin'
-}
-
 export async function signIn(email: string, password: string): Promise<AuthUser> {
   let response: Response
 

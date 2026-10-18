@@ -56,9 +56,6 @@ export async function fetchUserCount(): Promise<number> {
   if (response.status === 401) {
     throw new Error('Sua sessão expirou. Entre novamente.')
   }
-  if (response.status === 403) {
-    throw new Error('Você não tem permissão para visualizar o total de usuários.')
-  }
   if (!response.ok) {
     throw new Error('Não foi possível carregar o total de usuários.')
   }
@@ -100,9 +97,6 @@ export async function fetchUsers(search: string, page: number): Promise<UserPage
   if (response.status === 401) {
     throw new Error('Sua sessão expirou. Entre novamente.')
   }
-  if (response.status === 403) {
-    throw new Error('Você não tem permissão para gerenciar usuários.')
-  }
   if (!response.ok) {
     throw new Error('Não foi possível carregar os usuários.')
   }
@@ -131,9 +125,6 @@ export async function fetchUser(id: string): Promise<User> {
 
   if (response.status === 401) {
     throw new Error('Sua sessão expirou. Entre novamente.')
-  }
-  if (response.status === 403) {
-    throw new Error('Você não tem permissão para gerenciar usuários.')
   }
   if (response.status === 404) {
     throw new Error('Usuário não encontrado.')
@@ -181,9 +172,6 @@ export async function saveUser(user: UserFormData, id?: string): Promise<void> {
   if (response.status === 401) {
     throw new Error('Sua sessão expirou. Entre novamente.')
   }
-  if (response.status === 403) {
-    throw new Error('Você não tem permissão para gerenciar usuários.')
-  }
   if (response.status === 404) {
     throw new Error('Usuário não encontrado.')
   }
@@ -214,9 +202,6 @@ export async function deleteUser(id: string): Promise<void> {
 
   if (response.status === 401) {
     throw new Error('Sua sessão expirou. Entre novamente.')
-  }
-  if (response.status === 403) {
-    throw new Error('Você não tem permissão para gerenciar usuários.')
   }
   if (response.status === 404) {
     throw new Error('Usuário não encontrado.')

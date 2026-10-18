@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router/composables'
-import { getAuthenticatedUser, isAdmin, signOut } from '@/services/auth'
+import { getAuthenticatedUser, signOut } from '@/services/auth'
 
 const router = useRouter()
 const logoutError = ref('')
@@ -24,7 +24,6 @@ const roleLabels: Record<string, string> = {
   physiotherapist: 'Fisioterapia'
 }
 const userRole = user ? roleLabels[user.role] || user.role : ''
-const canManageUsers = isAdmin()
 
 async function handleLogout(): Promise<void> {
   logoutError.value = ''
@@ -85,7 +84,6 @@ async function handleLogout(): Promise<void> {
         Pacientes
       </router-link>
       <router-link
-        v-if="canManageUsers"
         class="sidebar-link"
         to="/users"
         active-class="active"

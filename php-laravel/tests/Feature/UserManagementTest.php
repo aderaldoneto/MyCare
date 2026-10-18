@@ -12,7 +12,7 @@ class UserManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_get_active_user_count(): void
+    public function test_authenticated_user_can_get_active_user_count(): void
     {
         $admin = User::factory()->create(['role' => Role::Admin]);
         User::factory()->count(2)->create();
@@ -25,7 +25,7 @@ class UserManagementTest extends TestCase
             ->assertJson(['count' => 3]);
     }
 
-    public function test_user_count_requires_admin_authentication(): void
+    public function test_user_count_requires_authentication_but_not_admin_role(): void
     {
         $this->getJson('/api/users/count')->assertUnauthorized();
 
@@ -34,12 +34,12 @@ class UserManagementTest extends TestCase
 
         $this->withToken($token)
             ->getJson('/api/users/count')
-            ->assertForbidden();
+            ->assertOk();
     }
 
-    public function test_admin_can_list_create_view_update_and_delete_users(): void
+    public function test_non_admin_can_list_create_view_update_and_delete_users(): void
     {
-        $admin = User::factory()->create(['role' => Role::Admin]);
+        $admin = User::factory()->create(['role' => Role::Doctor]);
         $target = User::factory()->create([
             'name' => 'Maria da Silva',
             'email' => 'maria@example.com',
@@ -92,14 +92,14 @@ class UserManagementTest extends TestCase
         $this->assertSoftDeleted('users', ['id' => $createdId]);
     }
 
-    public function test_only_admins_can_manage_users(): void
+    public function test_non_admin_can_manage_users(): void
     {
         $nonAdmin = User::factory()->create(['role' => Role::Doctor]);
         $token = $nonAdmin->createToken('test')->plainTextToken;
 
         $this->withToken($token)
             ->getJson('/api/users')
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_admin_cannot_delete_self_or_remove_the_last_admin_role(): void
