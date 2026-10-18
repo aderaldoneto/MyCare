@@ -604,6 +604,13 @@
   letter-spacing: -0.7px;
 }
 
+.summary-error {
+  display: block;
+  margin-top: 5px;
+  color: #c23d4b;
+  font-size: 11px;
+}
+
 .patients-section {
   margin-top: 26px;
   padding: 22px 22px 5px;

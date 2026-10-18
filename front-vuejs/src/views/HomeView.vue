@@ -1,11 +1,27 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import MenuView from '@/components/MenuView.vue'
 import TopoView from '@/components/TopoView.vue'
+import { getAuthenticatedUser } from '@/services/auth'
+import { fetchPatientCount } from '@/services/patients'
+
+const user = getAuthenticatedUser()
+const patientCount = ref<number | null>(null)
+const patientCountError = ref('')
 const today = new Intl.DateTimeFormat('pt-BR', {
   weekday: 'long',
   day: 'numeric',
   month: 'long'
 }).format(new Date())
+
+onMounted(async () => {
+  try {
+    patientCount.value = await fetchPatientCount()
+  } catch (error) {
+    patientCountError.value =
+      error instanceof Error ? error.message : 'Não foi possível carregar o total de pacientes.'
+  }
+})
 </script>
 
 <template>
@@ -19,7 +35,7 @@ const today = new Intl.DateTimeFormat('pt-BR', {
         <section class="welcome-row">
           <div>
             <span class="eyebrow">{{ today.toUpperCase() }}</span>
-            <h1>Olá, Aderaldo</h1>
+            <h1>Olá, {{ user?.name.split(' ')[0] }}</h1>
             <p>Aqui está um resumo para você.</p>
           </div>
           <a class="primary-button new-patient-button" href="#pacientes">
@@ -35,7 +51,11 @@ const today = new Intl.DateTimeFormat('pt-BR', {
               </span>
             </div>
             <span class="summary-label">Total de pacientes</span>
-            <strong class="summary-value">99</strong>
+            <strong v-if="patientCount !== null" class="summary-value">{{ patientCount }}</strong>
+            <span v-else-if="patientCountError" class="summary-error" role="alert">
+              {{ patientCountError }}
+            </span>
+            <strong v-else class="summary-value" aria-label="Carregando">...</strong>
           </article>
         </section>
 

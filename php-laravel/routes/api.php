@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PatientController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,6 +20,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/patients/count', [PatientController::class, 'count']);
 
     Route::get('/user', function (Request $request) {
         return $request->user();

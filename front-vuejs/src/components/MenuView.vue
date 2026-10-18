@@ -1,10 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router/composables'
-import { signOut } from '@/services/auth'
+import { getAuthenticatedUser, signOut } from '@/services/auth'
 
 const router = useRouter()
 const logoutError = ref('')
+const user = getAuthenticatedUser()
+const userInitials = computed(() =>
+  (user?.name.trim().split(/\s+/).map((part) => part.charAt(0)) || [])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+)
+const roleLabels: Record<string, string> = {
+  admin: 'Administrador',
+  manager: 'Gerente',
+  receptionist: 'Recepcionista',
+  doctor: 'Médico',
+  nurse: 'Enfermagem',
+  dentist: 'Dentista',
+  psychologist: 'Psicologia',
+  nutritionist: 'Nutrição',
+  physiotherapist: 'Fisioterapia'
+}
+const userRole = user ? roleLabels[user.role] || user.role : ''
 
 async function handleLogout(): Promise<void> {
   logoutError.value = ''
@@ -81,8 +100,8 @@ async function handleLogout(): Promise<void> {
       <p v-if="logoutError" class="form-error" role="alert">{{ logoutError }}</p>
 
       <div class="profile">
-        <span class="profile-avatar">AN</span>
-        <span><strong>Aderaldo Neto</strong><small>Meu cargo</small></span>
+        <span class="profile-avatar">{{ userInitials }}</span>
+        <span><strong>{{ user?.name }}</strong><small>{{ userRole }}</small></span>
         <span class="profile-menu" aria-hidden="true">···</span>
       </div>
     </div>

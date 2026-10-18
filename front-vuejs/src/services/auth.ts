@@ -1,5 +1,7 @@
 const TOKEN_STORAGE_KEY = 'mycare-access-token'
 const TOKEN_EXPIRATION_KEY = 'mycare-access-token-expires-at'
+const USER_NAME_STORAGE_KEY = 'mycare-user-name'
+const USER_ROLE_STORAGE_KEY = 'mycare-user-role'
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api').replace(
   /\/$/,
   ''
@@ -32,6 +34,17 @@ export function getAccessToken(): string | null {
   }
 
   return token
+}
+
+export function getAuthenticatedUser(): Pick<AuthUser, 'name' | 'role'> | null {
+  if (!getAccessToken()) {
+    return null
+  }
+
+  const name = localStorage.getItem(USER_NAME_STORAGE_KEY)
+  const role = localStorage.getItem(USER_ROLE_STORAGE_KEY)
+
+  return name && role ? { name, role } : null
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
@@ -70,6 +83,8 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
 
   localStorage.setItem(TOKEN_STORAGE_KEY, data.token)
   localStorage.setItem(TOKEN_EXPIRATION_KEY, data.expires_at)
+  localStorage.setItem(USER_NAME_STORAGE_KEY, data.user.name)
+  localStorage.setItem(USER_ROLE_STORAGE_KEY, data.user.role)
   return data.user
 }
 
@@ -104,6 +119,8 @@ export async function signOut(): Promise<void> {
 function clearStoredToken(): void {
   localStorage.removeItem(TOKEN_STORAGE_KEY)
   localStorage.removeItem(TOKEN_EXPIRATION_KEY)
+  localStorage.removeItem(USER_NAME_STORAGE_KEY)
+  localStorage.removeItem(USER_ROLE_STORAGE_KEY)
 }
 
 function isLoginResponse(value: unknown): value is LoginResponse {
