@@ -30,6 +30,11 @@ const router = new VueRouter({
     },
     {
       path: '/patients/:id',
+      name: 'patient-details',
+      component: () => import('../views/PatientDetailsView.vue')
+    },
+    {
+      path: '/patients/:id/edit',
       name: 'patient-edit',
       component: () => import('../views/PatientCreateView.vue')
     },
