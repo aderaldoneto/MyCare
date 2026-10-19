@@ -62,7 +62,7 @@ Na raiz do repositório, execute:
 docker compose up -d --build
 ```
 
-Esse comando inicia o backend Laravel, o banco de dados MySQL e o frontend Vue.js.
+Esse comando inicia o backend Laravel, o banco de dados MySQL, o Redis usado no cache das listagens e o frontend Vue.js.
 
 Na primeira inicialização, o container do frontend instala automaticamente suas dependências com `npm ci`.
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Role;
 use App\Models\User;
+use App\Support\RedisCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,31 +18,46 @@ class UserController extends Controller
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $users = User::query()
-            ->select(['id', 'name', 'email', 'role'])
-            ->when(trim($validated['search'] ?? '') !== '', function ($query) use ($validated) {
-                $search = trim($validated['search']);
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(10);
+        $search = trim($validated['search'] ?? '');
+        $page = $validated['page'] ?? 1;
+        $cacheKey = 'list:'.sha1(json_encode([$search, $page]));
 
-        return response()->json([
-            'data' => $users->getCollection()->map(fn (User $user) => $this->userData($user)),
-            'current_page' => $users->currentPage(),
-            'last_page' => $users->lastPage(),
-            'total' => $users->total(),
-        ]);
+        $response = app(RedisCache::class)->remember(
+            'users',
+            $cacheKey,
+            function () use ($search, $page): array {
+                $users = User::query()
+                    ->select(['id', 'name', 'email', 'role'])
+                    ->when($search !== '', function ($query) use ($search) {
+                        $query->where(function ($query) use ($search) {
+                            $query->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                    })
+                    ->orderBy('name')
+                    ->paginate(10, ['*'], 'page', $page);
+
+                return [
+                    'data' => $users->getCollection()->map(fn (User $user) => $this->userData($user))->all(),
+                    'current_page' => $users->currentPage(),
+                    'last_page' => $users->lastPage(),
+                    'total' => $users->total(),
+                ];
+            }
+        );
+
+        return response()->json($response);
     }
 
     public function count(): JsonResponse
     {
-        return response()->json([
-            'count' => User::query()->count(),
-        ]);
+        $count = app(RedisCache::class)->remember(
+            'users',
+            'count',
+            fn (): int => User::query()->count()
+        );
+
+        return response()->json(['count' => $count]);
     }
 
     public function store(Request $request): JsonResponse
@@ -57,6 +73,7 @@ class UserController extends Controller
         ]);
 
         $user = User::create($validated);
+        app(RedisCache::class)->flush('users');
 
         return response()->json($this->userData($user), 201);
     }
@@ -98,6 +115,7 @@ class UserController extends Controller
         }
 
         $user->update($validated);
+        app(RedisCache::class)->flush('users');
 
         return response()->json($this->userData($user->refresh()));
     }
@@ -120,6 +138,7 @@ class UserController extends Controller
         }
 
         $user->delete();
+        app(RedisCache::class)->flush('users');
 
         return response()->json(['message' => 'Usuário excluído com sucesso.']);
     }

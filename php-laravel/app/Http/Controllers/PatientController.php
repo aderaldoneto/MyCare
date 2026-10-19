@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Patient;
+use App\Support\RedisCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,6 +27,7 @@ class PatientController extends Controller
         ]);
 
         $patient = Patient::create($validated);
+        app(RedisCache::class)->flush('patients');
 
         return response()->json($patient, 201);
     }
@@ -37,31 +39,41 @@ class PatientController extends Controller
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $patients = Patient::query()
-            ->select(['id', 'name', 'cpf', 'phone', 'birth_date'])
-            ->when(trim($validated['search'] ?? '') !== '', function ($query) use ($validated) {
-                $search = trim($validated['search']);
+        $search = trim($validated['search'] ?? '');
+        $page = $validated['page'] ?? 1;
+        $cacheKey = 'list:'.sha1(json_encode([$search, $page]));
 
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('cpf', 'like', "%{$search}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(10);
+        $response = app(RedisCache::class)->remember(
+            'patients',
+            $cacheKey,
+            function () use ($search, $page): array {
+                $patients = Patient::query()
+                    ->select(['id', 'name', 'cpf', 'phone', 'birth_date'])
+                    ->when($search !== '', function ($query) use ($search) {
+                        $query->where(function ($query) use ($search) {
+                            $query->where('name', 'like', "%{$search}%")
+                                ->orWhere('cpf', 'like', "%{$search}%");
+                        });
+                    })
+                    ->orderBy('name')
+                    ->paginate(10, ['*'], 'page', $page);
 
-        return response()->json([
-            'data' => $patients->getCollection()->map(fn (Patient $patient) => [
-                'id' => $patient->id,
-                'name' => $patient->name,
-                'cpf' => $patient->cpf,
-                'phone' => $patient->phone,
-                'birth_date' => $patient->birth_date?->toDateString(),
-            ]),
-            'current_page' => $patients->currentPage(),
-            'last_page' => $patients->lastPage(),
-            'total' => $patients->total(),
-        ]);
+                return [
+                    'data' => $patients->getCollection()->map(fn (Patient $patient) => [
+                        'id' => $patient->id,
+                        'name' => $patient->name,
+                        'cpf' => $patient->cpf,
+                        'phone' => $patient->phone,
+                        'birth_date' => $patient->birth_date?->toDateString(),
+                    ])->all(),
+                    'current_page' => $patients->currentPage(),
+                    'last_page' => $patients->lastPage(),
+                    'total' => $patients->total(),
+                ];
+            }
+        );
+
+        return response()->json($response);
     }
 
     public function show(Patient $patient): JsonResponse
@@ -91,6 +103,7 @@ class PatientController extends Controller
         ]);
 
         $patient->update($validated);
+        app(RedisCache::class)->flush('patients');
 
         return response()->json($this->patientData($patient->refresh()));
     }
@@ -98,15 +111,20 @@ class PatientController extends Controller
     public function destroy(Patient $patient): JsonResponse
     {
         $patient->delete();
+        app(RedisCache::class)->flush('patients');
 
         return response()->json(['message' => 'Paciente excluído com sucesso.']);
     }
 
     public function count(): JsonResponse
     {
-        return response()->json([
-            'count' => Patient::query()->count(),
-        ]);
+        $count = app(RedisCache::class)->remember(
+            'patients',
+            'count',
+            fn (): int => Patient::query()->count()
+        );
+
+        return response()->json(['count' => $count]);
     }
 
     private function patientData(Patient $patient): array

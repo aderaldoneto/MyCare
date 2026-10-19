@@ -6,6 +6,7 @@ services:
       args:
         WWWGROUP: '${WWWGROUP:-1000}'
     image: mycare-laravel:8.2
+    command: ['php', 'artisan', 'serve', '--host=0.0.0.0', '--port=80', '--no-reload']
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     ports:
@@ -14,10 +15,15 @@ services:
     environment:
       WWWUSER: '${WWWUSER:-1000}'
       LARAVEL_SAIL: 1
+      CACHE_DRIVER: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     volumes:
       - '.:/var/www/html'
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - mycare
@@ -38,6 +44,16 @@ services:
       test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-prootsecret']
       interval: 5s
       timeout: 5s
+      retries: 10
+    networks:
+      - mycare
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
       retries: 10
     networks:
       - mycare
