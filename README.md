@@ -38,6 +38,12 @@ cd php-laravel
 cp .env.example .env
 ```
 
+Configure o usuário do container para que ele possa gravar nos arquivos do projeto:
+
+```bash
+printf '\nWWWUSER=%s\nWWWGROUP=%s\n' "$(id -u)" "$(id -g)" >> .env
+```
+
 Volte para a raiz do repositório:
 
 ```bash

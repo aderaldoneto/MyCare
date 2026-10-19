@@ -1,5 +1,5 @@
 
-name: php-laravel
+name: mycare
 
 include:
   - path: ./php-laravel/docker-compose.yml
