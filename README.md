@@ -1,117 +1,46 @@
 # MyCare
 
+Aplicação de cadastro e gerenciamento de pacientes, com frontend Vue.js e backend Laravel.
+
 ## Pré-requisitos
 
-- Docker e Docker Compose
 - Git
+- Docker com Docker Compose v2.17 ou superior
 
-## 1. Clonar o repositório
+## Iniciar pela primeira vez
 
 ```bash
 git clone https://github.com/aderaldoneto/MyCare.git
 cd MyCare
+./start.sh
 ```
 
-## 2. Configurar o backend Laravel
+O script prepara o `.env`, instala as dependências PHP na primeira execução, gera a chave do Laravel, inicia os containers, aguarda o MySQL e o Redis ficarem prontos e aplica as migrations e seeders. O frontend instala suas dependências automaticamente.
 
-Instale as dependências do PHP utilizando Docker:
+## Acessar
+
+- Frontend: http://localhost:5174/
+- Backend: http://localhost:8000/
+
+Usuário de demonstração:
+
+- E-mail: `aderaldo@mycare.com`
+- Senha: `123456789`
+
+## Comandos úteis
+
+Execute na raiz do repositório:
 
 ```bash
-docker run --rm \
-  -v "$PWD/php-laravel:/app" \
-  -w /app \
-  php:8.2-cli \
-  bash -lc '
-    apt-get update -qq &&
-    apt-get install -y -qq git unzip curl libcurl4-openssl-dev libzip-dev libonig-dev libxml2-dev >/dev/null &&
-    docker-php-ext-install -j$(nproc) pdo_mysql mbstring xml curl zip &&
-    curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php &&
-    php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer &&
-    composer install
-  '
+docker compose up -d       # iniciar os serviços depois da primeira configuração
+docker compose logs -f     # acompanhar os logs
+docker compose down        # parar os serviços, preservando os dados
 ```
 
-Configure as variáveis de ambiente:
-
-```bash
-cd php-laravel
-cp .env.example .env
-```
-
-Configure o usuário do container para que ele possa gravar nos arquivos do projeto:
-
-```bash
-printf '\nWWWUSER=%s\nWWWGROUP=%s\n' "$(id -u)" "$(id -g)" >> .env
-```
-
-Volte para a raiz do repositório:
-
-```bash
-cd ..
-```
-
-## 3. Configurar a aplicação
-
-Gere a chave da aplicação Laravel:
-
-```bash
-cd php-laravel
-docker compose run --rm --no-deps laravel.test php artisan key:generate
-cd ..
-```
-
-O `--no-deps` evita iniciar MySQL e Redis apenas para gerar a chave. O arquivo `.env.example` já aponta o Laravel para o serviço `mysql` e usa o usuário `sail`, criado pelo Compose.
-
-## 4. Iniciar os serviços
-
-Na raiz do repositório, execute:
-
-```bash
-docker compose up -d --build
-```
-
-Esse comando inicia o backend Laravel, o banco de dados MySQL, o Redis usado no cache das listagens e o frontend Vue.js.
-
-Na primeira inicialização, o container do frontend instala automaticamente suas dependências com `npm ci`.
-
-Migrations do banco de dados:
-
-```bash
-docker compose exec laravel.test php artisan migrate
-```
-
-Seeders no banco de dados:
-
-```bash
-docker compose exec laravel.test php artisan db:seed
-```
-
-
-## 5. Acessar a aplicação
-
-- **Frontend (Vue.js):** http://localhost:5174/
-- **Backend (Laravel):** http://localhost:8000/
-
-Mantenha os serviços em execução enquanto utilizar a aplicação.
-
-Credenciais: 
-E-mail: aderaldo@mycare.com 
-Senha: 123456789
-
-## 6. Encerrar a aplicação
-
-Na raiz do repositório, execute:
-
-```bash
-docker compose down
-```
-
-Esse comando encerra os containers, mas preserva os dados armazenados no volume do banco de dados.
-
-Para encerrar os containers e também excluir os volumes, execute:
+Para apagar também os dados do banco e demais volumes:
 
 ```bash
 docker compose down -v
 ```
 
-**Atenção:** esse último comando remove permanentemente os dados armazenados nos volumes do projeto, incluindo os dados do banco de dados MySQL.
+Esse último comando remove permanentemente os dados locais do projeto.
