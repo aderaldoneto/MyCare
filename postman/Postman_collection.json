@@ -1,0 +1,169 @@
+{
+  "info": {
+    "_postman_id": "70d69a39-e83c-4d74-b46d-31a943eef312",
+    "name": "MyCare API",
+    "description": "Exemplos de autenticação e operações CRUD de pacientes. Faça Login primeiro; depois execute Cadastrar paciente, Exibir paciente, Atualizar paciente e Excluir paciente. A requisição de cadastro gera valores únicos e salva o ID automaticamente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000/api", "type": "string" },
+    { "key": "email", "value": "aderaldo@mycare.com", "type": "string" },
+    { "key": "password", "value": "123456789", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "patientId", "value": "", "type": "string" },
+    { "key": "patientCpf", "value": "", "type": "string" },
+    { "key": "patientEmail", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/login",
+            "description": "Autentica um usuário e armazena o token Sanctum retornado na variável `token`. Requer um usuário criado no banco (por exemplo, via `php artisan db:seed`)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login realizado', function () { pm.response.to.have.status(200); });",
+                  "const data = pm.response.json();",
+                  "if (data.token) pm.collectionVariables.set('token', data.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/logout",
+            "description": "Invalida o token Sanctum atual. Execute depois das operações autenticadas."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pacientes",
+      "item": [
+        {
+          "name": "Listar pacientes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/patients?page=1&search=Ana",
+            "description": "Lista pacientes ativos, ordenados por nome e paginados (10 por página). Remova `search` para listar sem filtro."
+          }
+        },
+        {
+          "name": "Contar pacientes ativos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/patients/count",
+            "description": "Retorna a quantidade de pacientes não excluídos logicamente."
+          }
+        },
+        {
+          "name": "Cadastrar paciente",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const suffix = Date.now().toString().slice(-10);",
+                  "pm.collectionVariables.set('patientCpf', '900' + suffix);",
+                  "pm.collectionVariables.set('patientEmail', 'postman.' + suffix + '@example.test');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Paciente cadastrado', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('patientId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Paciente Exemplo Postman\",\n  \"cpf\": \"{{patientCpf}}\",\n  \"rg\": \"12.345.678-9\",\n  \"birth_date\": \"1990-05-20\",\n  \"sex\": \"f\",\n  \"phone\": \"(11) 9 9999-0000\",\n  \"email\": \"{{patientEmail}}\",\n  \"description\": \"Cadastro de exemplo via Postman.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/patients",
+            "description": "Gera CPF e e-mail únicos a cada execução. O script salva o `id` da resposta em `patientId` para as requisições de detalhes, atualização e exclusão."
+          }
+        },
+        {
+          "name": "Exibir paciente",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/patients/{{patientId}}",
+            "description": "Use o `patientId` armazenado ao executar a requisição de cadastro."
+          }
+        },
+        {
+          "name": "Atualizar paciente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Paciente Exemplo Atualizado\",\n  \"cpf\": \"{{patientCpf}}\",\n  \"rg\": \"98.765.432-1\",\n  \"birth_date\": \"1990-05-20\",\n  \"sex\": \"f\",\n  \"phone\": \"(11) 9 8888-0000\",\n  \"email\": \"{{patientEmail}}\",\n  \"description\": \"Cadastro atualizado via Postman.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/patients/{{patientId}}",
+            "description": "A atualização exige nome, CPF, RG, data de nascimento, sexo e telefone. E-mail e descrição são opcionais."
+          }
+        },
+        {
+          "name": "Excluir paciente (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/patients/{{patientId}}",
+            "description": "Marca o paciente como excluído (`deleted_at`) sem apagar permanentemente o registro."
+          }
+        }
+      ]
+    }
+  ]
+}
