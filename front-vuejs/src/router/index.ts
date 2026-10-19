@@ -72,7 +72,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   if (to.name === 'login' && isAuthenticated()) {
-    next({ name: 'home' })
+    next({ name: 'patients' })
     return
   }
 

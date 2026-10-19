@@ -20,7 +20,7 @@ async function handleLogin(): Promise<void> {
 
   try {
     await signIn(email.value.trim(), password.value)
-    await router.push({ name: 'home' })
+    await router.push({ name: 'patients' })
   } catch (error) {
     errorMessage.value =
       error instanceof Error ? error.message : 'Não foi possível entrar. Tente novamente.'
