@@ -6,7 +6,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:800
 )
 
 interface PatientCountResponse {
-  count: number
+  count: number | string
 }
 
 export interface Patient {
@@ -76,7 +76,7 @@ export async function fetchPatientCount(): Promise<number> {
     throw new Error('O servidor retornou um total de pacientes inválido.')
   }
 
-  return data.count
+  return Number(data.count)
 }
 
 export async function fetchPatients(search: string, page: number): Promise<PatientPage> {
@@ -295,7 +295,10 @@ function isPatientCountResponse(value: unknown): value is PatientCountResponse {
   }
 
   const count = (value as { count?: unknown }).count
-  return typeof count === 'number' && Number.isInteger(count) && count >= 0
+  return (
+    (typeof count === 'number' && Number.isSafeInteger(count) && count >= 0) ||
+    (typeof count === 'string' && /^\d+$/.test(count) && Number.isSafeInteger(Number(count)))
+  )
 }
 
 function isPatientDetails(value: unknown): value is PatientDetails {

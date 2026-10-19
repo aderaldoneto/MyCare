@@ -61,17 +61,23 @@ export async function fetchUserCount(): Promise<number> {
   }
 
   const data: unknown = await response.json()
-  if (
-    !data ||
-    typeof data !== 'object' ||
-    typeof (data as { count?: unknown }).count !== 'number' ||
-    !Number.isInteger((data as { count: number }).count) ||
-    (data as { count: number }).count < 0
-  ) {
+  if (!isUserCountResponse(data)) {
     throw new Error('O servidor retornou um total de usuários inválido.')
   }
 
-  return (data as { count: number }).count
+  return Number(data.count)
+}
+
+function isUserCountResponse(value: unknown): value is { count: number | string } {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const count = (value as { count?: unknown }).count
+  return (
+    (typeof count === 'number' && Number.isSafeInteger(count) && count >= 0) ||
+    (typeof count === 'string' && /^\d+$/.test(count) && Number.isSafeInteger(Number(count)))
+  )
 }
 
 export async function fetchUsers(search: string, page: number): Promise<UserPage> {
