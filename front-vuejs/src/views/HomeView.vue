@@ -14,7 +14,8 @@ const userCountError = ref('')
 const today = new Intl.DateTimeFormat('pt-BR', {
   weekday: 'long',
   day: 'numeric',
-  month: 'long'
+  month: 'long', 
+  year: 'numeric'
 }).format(new Date())
 
 onMounted(() => {
