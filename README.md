@@ -24,7 +24,7 @@ O script prepara o `.env`, instala as dependências PHP na primeira execução, 
 
 Usuário de demonstração:
 
-- E-mail: `aderaldo@mycare.com`
+- E-mail: `admin@mycare.com`
 - Senha: `123456789`
 
 ## Comandos úteis

@@ -13,7 +13,7 @@
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8000/api", "type": "string" },
-    { "key": "email", "value": "aderaldo@mycare.com", "type": "string" },
+    { "key": "email", "value": "admin@mycare.com", "type": "string" },
     { "key": "password", "value": "123456789", "type": "string" },
     { "key": "token", "value": "", "type": "string" },
     { "key": "patientId", "value": "", "type": "string" },

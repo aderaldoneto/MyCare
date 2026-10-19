@@ -15,18 +15,18 @@ class AuthTest extends TestCase
     public function test_user_can_login_and_logout_with_a_sanctum_token(): void
     {
         User::factory()->create([
-            'email' => 'aderaldo@mycare.com',
+            'email' => 'admin@mycare.com',
             'password' => Hash::make('123456789'),
         ]);
 
         $loginResponse = $this->postJson('/api/login', [
-            'email' => 'aderaldo@mycare.com',
+            'email' => 'admin@mycare.com',
             'password' => '123456789',
         ]);
 
         $loginResponse
             ->assertOk()
-            ->assertJsonPath('user.email', 'aderaldo@mycare.com')
+            ->assertJsonPath('user.email', 'admin@mycare.com')
             ->assertJsonStructure(['token', 'user' => ['id', 'name', 'email', 'role']]);
 
         $token = $loginResponse->json('token');
@@ -41,12 +41,12 @@ class AuthTest extends TestCase
     public function test_login_rejects_invalid_credentials(): void
     {
         User::factory()->create([
-            'email' => 'aderaldo@mycare.com',
+            'email' => 'admin@mycare.com',
             'password' => Hash::make('123456789'),
         ]);
 
         $this->postJson('/api/login', [
-            'email' => 'aderaldo@mycare.com',
+            'email' => 'admin@mycare.com',
             'password' => 'incorrect-password',
         ])
             ->assertUnauthorized()

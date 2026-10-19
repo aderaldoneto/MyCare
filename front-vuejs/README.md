@@ -20,7 +20,7 @@ docker compose exec laravel.test php artisan migrate --seed
 
 Abra <http://localhost:5174/>. Na tela de login, use o usuário criado pelo seeder:
 
-- **E-mail:** `aderaldo@mycare.com`
+- **E-mail:** `admin@mycare.com`
 - **Senha:** `123456789`
 
 Após entrar, acesse **Pacientes** no menu para listar, cadastrar, consultar, editar ou excluir pacientes. A API Laravel precisa estar disponível em `http://localhost:8000`.
