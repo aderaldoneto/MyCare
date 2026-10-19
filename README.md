@@ -50,9 +50,11 @@ Gere a chave da aplicação Laravel:
 
 ```bash
 cd php-laravel
-docker compose run --rm laravel.test php artisan key:generate
+docker compose run --rm --no-deps laravel.test php artisan key:generate
 cd ..
 ```
+
+O `--no-deps` evita iniciar MySQL e Redis apenas para gerar a chave. O arquivo `.env.example` já aponta o Laravel para o serviço `mysql` e usa o usuário `sail`, criado pelo Compose.
 
 ## 4. Iniciar os serviços
 
@@ -72,12 +74,23 @@ Migrations do banco de dados:
 docker compose exec laravel.test php artisan migrate
 ```
 
+Seeders no banco de dados:
+
+```bash
+docker compose exec laravel.test php artisan db:seed
+```
+
+
 ## 5. Acessar a aplicação
 
 - **Frontend (Vue.js):** http://localhost:5174/
 - **Backend (Laravel):** http://localhost:8000/
 
 Mantenha os serviços em execução enquanto utilizar a aplicação.
+
+Credenciais: 
+E-mail: aderaldo@mycare.com 
+Senha: 123456789
 
 ## 6. Encerrar a aplicação
 
