@@ -66,16 +66,10 @@ Esse comando inicia o backend Laravel, o banco de dados MySQL e o frontend Vue.j
 
 Na primeira inicialização, o container do frontend instala automaticamente suas dependências com `npm ci`.
 
-Execute as migrations do banco de dados:
+Migrations do banco de dados:
 
 ```bash
 docker compose exec laravel.test php artisan migrate
-```
-
-Acompanhe o estado dos serviços:
-
-```bash
-docker compose ps
 ```
 
 ## 5. Acessar a aplicação

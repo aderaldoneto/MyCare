@@ -1,51 +1,62 @@
-# front-vuejs
+# Front-end MyCare
 
-This template should help get you started developing with Vue 3 in Vite.
+Interface do MyCare desenvolvida com **Vue 2.7**, Vue Router, TypeScript e Vite. O front-end consome a API Laravel em `http://localhost:8000/api` por padrão.
 
-## Recommended IDE Setup
+Para a configuração completa da aplicação (Laravel, MySQL e front-end em Docker), consulte o [README principal](../README.md). Estas instruções cobrem o front-end isoladamente e o acesso à aplicação.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## Acessar a aplicação com Docker Compose
 
-## Type Support for `.vue` Imports in TS
+Na raiz do repositório, inicie os serviços:
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
-
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
-
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```bash
+docker compose up -d --build
 ```
 
-### API URL
+Prepare o banco e crie o usuário inicial:
 
-The login uses the Laravel API at `http://localhost:8000/api` by default. Set
-`VITE_API_BASE_URL` in the frontend environment to override this URL.
+```bash
+docker compose exec laravel.test php artisan migrate --seed
+```
 
-### Compile and Hot-Reload for Development
+Abra <http://localhost:5174/>. Na tela de login, use o usuário criado pelo seeder:
 
-```sh
+- **E-mail:** `aderaldo@mycare.com`
+- **Senha:** `123456789`
+
+Após entrar, acesse **Pacientes** no menu para listar, cadastrar, consultar, editar ou excluir pacientes. A API Laravel precisa estar disponível em `http://localhost:8000`.
+
+## Executar o front-end localmente
+
+Requisitos: Node.js 18 ou superior e npm. Primeiro inicie o Laravel e o MySQL conforme o [README principal](../README.md), aplique as migrations e crie o usuário:
+
+```bash
+docker compose up -d mysql laravel.test
+docker compose exec laravel.test php artisan migrate --seed
+```
+
+Depois, em outro terminal:
+
+```bash
+cd front-vuejs
+npm ci
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+O Vite disponibiliza a interface em <http://localhost:5173/>. Para usar outra URL de API, crie `front-vuejs/.env.local`:
 
-```sh
-npm run build
+```dotenv
+VITE_API_BASE_URL=http://localhost:8000/api
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+Reinicie o servidor Vite depois de alterar essa variável.
 
-```sh
-npm run lint
+## Comandos de desenvolvimento
+
+```bash
+npm run dev        # servidor local com hot reload
+npm run type-check # verifica os tipos TypeScript e Vue
+npm run build      # verifica os tipos e gera a versão de produção
+npm run lint       # executa ESLint (com correção automática)
 ```
+
+O resultado de produção é gerado em `dist/`.
